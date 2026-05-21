@@ -18,8 +18,13 @@ dotfiles() {
 }
 
 if [ ! -d "$DOTFILES_DIR" ]; then
-    echo "Cloning $REPO_URL into $DOTFILES_DIR ..."
-    git clone --bare "$REPO_URL" "$DOTFILES_DIR"
+    if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+        echo "Cloning via gh (handles private repos) ..."
+        gh repo clone rebel-youngjaekim/dotfiles "$DOTFILES_DIR" -- --bare
+    else
+        echo "Cloning $REPO_URL into $DOTFILES_DIR ..."
+        git clone --bare "$REPO_URL" "$DOTFILES_DIR"
+    fi
 else
     echo "$DOTFILES_DIR already exists — fetching latest."
     dotfiles fetch origin
