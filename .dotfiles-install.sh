@@ -35,13 +35,13 @@ mkdir -p "$BACKUP_DIR"
 echo "Checking out dotfiles into \$HOME ..."
 if ! dotfiles checkout 2>/dev/null; then
     echo "Conflicting files exist — backing them up to $BACKUP_DIR/"
-    dotfiles checkout 2>&1 \
-        | grep -E "^\s+\." \
-        | awk '{print $1}' \
-        | while read -r f; do
-            mkdir -p "$BACKUP_DIR/$(dirname "$f")"
-            mv "$HOME/$f" "$BACKUP_DIR/$f"
-        done
+    conflicts=$(dotfiles checkout 2>&1 || true)
+    echo "$conflicts" | grep -E "^\s+\." | awk '{print $1}' | while read -r f; do
+        [ -z "$f" ] && continue
+        mkdir -p "$BACKUP_DIR/$(dirname "$f")"
+        mv "$HOME/$f" "$BACKUP_DIR/$f"
+        echo "  backed up: $f"
+    done
     dotfiles checkout
 fi
 
