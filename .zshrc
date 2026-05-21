@@ -9,9 +9,14 @@ export CLICOLOR=1
 # order: dir, symlink, socket, pipe, exec, block, char, suid, sgid, sticky+writable, sticky, writable
 export LSCOLORS='ExGxFxDxCxDxDxhbhdacEc'
 
-# ── prompt: user  host  ~/path  ❯ ──
+# ── prompt: user  host  ~/path  (branch)  ❯ ──
 setopt PROMPT_SUBST
-PROMPT='%F{147}%n%f  %F{117}%m%f  %F{151}%~%f  %F{218}❯%f '
+parse_git_branch() {
+    local branch
+    branch=$(git branch --show-current 2>/dev/null)
+    [ -n "$branch" ] && echo "($branch)"
+}
+PROMPT='%F{147}%n%f  %F{117}%m%f  %F{151}%~%f  %F{223}$(parse_git_branch)%f  %F{218}❯%f '
 
 alias ll='ls -alF'
 alias la='ls -A'

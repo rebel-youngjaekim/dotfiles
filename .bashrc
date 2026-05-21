@@ -9,8 +9,13 @@ export CLICOLOR=1
 # order: dir, symlink, socket, pipe, exec, block, char, suid, sgid, sticky+writable, sticky, writable
 export LSCOLORS='ExGxFxDxCxDxDxhbhdacEc'
 
-# ── prompt: user  host  ~/path  ❯ ──
-PS1='\[\e[38;5;147m\]\u\[\e[0m\]  \[\e[38;5;117m\]\h\[\e[0m\]  \[\e[38;5;151m\]\w\[\e[0m\]  \[\e[38;5;218m\]❯\[\e[0m\] '
+# ── prompt: user  host  ~/path  (branch)  ❯ ──
+parse_git_branch() {
+    local branch
+    branch=$(git branch --show-current 2>/dev/null)
+    [ -n "$branch" ] && echo "($branch)"
+}
+PS1='\[\e[38;5;147m\]\u\[\e[0m\]  \[\e[38;5;117m\]\h\[\e[0m\]  \[\e[38;5;151m\]\w\[\e[0m\]  \[\e[38;5;223m\]$(parse_git_branch)\[\e[0m\]  \[\e[38;5;218m\]❯\[\e[0m\] '
 
 alias ls='ls --color=auto'
 alias grep='grep --color=auto'
