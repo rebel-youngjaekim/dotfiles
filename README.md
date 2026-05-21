@@ -5,6 +5,7 @@ My personal dotfiles, tracked using the [bare-repo pattern](https://www.atlassia
 ## What's tracked
 
 - `.bashrc`
+- `.zshrc`
 - `.tmux.conf`
 - `.vimrc`
 - `.dotfiles-install.sh` — bootstrap script (see below)

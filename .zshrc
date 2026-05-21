@@ -1,4 +1,4 @@
-# catppuccin-ish colors for bash
+# catppuccin-ish colors for zsh
 
 # ── LS_COLORS (fixes the dark blue directory problem) ──
 # di=lavender, ln=sky, ex=green, archives=mauve, images=peach
@@ -10,16 +10,15 @@ export CLICOLOR=1
 export LSCOLORS='ExGxFxDxCxDxDxhbhdacEc'
 
 # ── prompt: user  host  ~/path  ❯ ──
-PS1='\[\e[38;5;147m\]\u\[\e[0m\]  \[\e[38;5;117m\]\h\[\e[0m\]  \[\e[38;5;151m\]\w\[\e[0m\]  \[\e[38;5;218m\]❯\[\e[0m\] '
+setopt PROMPT_SUBST
+PROMPT='%F{147}%n%f  %F{117}%m%f  %F{151}%~%f  %F{218}❯%f '
 
-alias ls='ls --color=auto'
-alias grep='grep --color=auto'
-
-# some more ls aliases
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 
 export TERM=xterm-256color
 
-alias t32='/tools/t32/bin/pc_linux64/t32marm'
+alias ls='ls --color=auto'
+alias grep='grep --color=auto'
+export PATH="$HOME/.local/bin:$PATH"
