@@ -59,16 +59,16 @@ Inside the tree: `Enter` open · `a` add file/dir · `d` delete · `r` rename ·
 | `Space w h/j/k/l` | **relocate** the split (far-left/bottom/top/far-right) |
 | `Ctrl-arrows` | resize the current split |
 
-### Tabs
-There are two kinds (see the guide for why):
+### Tabs & groups
+Each **tab page** is an "editor group" with its own tab strip (via scope.nvim) — the top strip only shows files belonging to the group you're in.
 | Keys | Action |
 |------|--------|
-| `Shift-h` / `Shift-l` | previous / next **buffer tab** (the strip at the top) |
-| `Space b p` | pick a buffer tab by letter |
-| `Space b d` | close the current buffer tab |
-| `Space t n` | new **tab page** (a whole separate split layout) |
-| `Space t c` | close tab page |
-| `Space ]` / `Space [` | next / prev tab page |
+| `Shift-h` / `Shift-l` | previous / next file **within the current group** |
+| `Space b p` | pick a file in the group by letter |
+| `Space b d` | close the current file |
+| `Space t n` | new **group** (tab page) with its own file set |
+| `Space t c` | close the group |
+| `Space ]` / `Space [` | switch to next / previous group |
 
 ### Git
 | Keys | Action |

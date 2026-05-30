@@ -54,14 +54,17 @@ Everything else — your editing muscle memory — is unchanged.
 
 ---
 
-## 4. "Tabs" — a heads-up
+## 4. Tabs & "editor groups" — the important mental model
 
-This trips up people coming from VSCode. In nvim there are **two** different things both called "tabs":
+VSCode has editor groups, each with its own tab bar. nvim can't do tabs *per split* (open files are global to nvim — there's no native way to give each side-by-side split its own tab strip). Instead, the unit of grouping is the **tab page**, and `scope.nvim` makes each tab page keep its own file list. Think of a **tab page = an editor group**:
 
-1. **Buffer tabs** (the strip at the top) = your open files. This is what feels like VSCode tabs. Switch with `Shift-h`/`Shift-l`. There's one shared strip, not one-per-split — that's just how vim works (open files are global).
-2. **Tab pages** (`Space t n`) = a whole separate *layout* of splits, like a second virtual desktop inside nvim. You probably won't need these often; ignore them until you do.
+- The strip at the top shows **only the files in your current group**, not everything you've ever opened.
+- `Shift-l` / `Shift-h` cycle through the files **in this group**.
+- `Space t n` makes a **new group** (a fresh tab page with an empty file list). Open files there and they belong to that group.
+- `Space ]` / `Space [` switch between groups. `Space t c` closes a group.
+- Inside any group you can still split (`Space s v` / `Space s h`) for side-by-side editing.
 
-Day to day, just think "buffer tabs = my open files" and use `Shift-h`/`Shift-l`.
+So instead of "two splits each with their own tabs," you have "two groups you flip between, each with its own tabs, and you split inside whichever group you're working in." That's the nvim-native equivalent — and the closest thing that actually exists.
 
 ---
 
