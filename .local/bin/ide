@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SESSION="ide"
+DIR="${1:-$PWD}"
+EDITOR_CMD="${IDE_EDITOR:-vim}"   # vim by default; set IDE_EDITOR=nvim to override
+
+# Split a sidebar (claude) and bottom panel around the given editor pane,
+# and record the three pane ids as session options for the toggle helper.
+build_panes() {
+  local sess="$1" main="$2" left panel
+  left=$(tmux split-window -PF '#{pane_id}' -f -hb -l 30% -t "$main" -c "$DIR")
+  tmux send-keys -t "$left" "claude" C-m
+  panel=$(tmux split-window -PF '#{pane_id}' -v -l 20% -t "$main" -c "$DIR")
+  tmux set-option -t "$sess" @ide_main  "$main"
+  tmux set-option -t "$sess" @ide_left  "$left"
+  tmux set-option -t "$sess" @ide_panel "$panel"
+  tmux select-pane -t "$main"
+}
+
+if [ -n "${TMUX:-}" ]; then
+  # Inside tmux: rebuild the CURRENT window into the ide layout.
+  sess=$(tmux display -p '#{session_name}')
+  cur=$(tmux display -p '#{pane_id}')
+  tmux kill-pane -a -t "$cur" 2>/dev/null || true   # remove every other pane in this window
+  build_panes "$sess" "$cur"
+  cd "$DIR"
+  exec $EDITOR_CMD                                   # this pane becomes the editor
+fi
+
+# Outside tmux: create the ide session (or attach if it already exists).
+if tmux has-session -t "$SESSION" 2>/dev/null; then
+  exec tmux attach -t "$SESSION"
+fi
+
+tmux new-session -d -s "$SESSION" -c "$DIR" -x "$(tput cols)" -y "$(tput lines)"
+main=$(tmux display -t "$SESSION" -p '#{pane_id}')
+build_panes "$SESSION" "$main"
+tmux send-keys -t "$main" "$EDITOR_CMD" C-m
+tmux select-pane -t "$main"
+exec tmux attach -t "$SESSION"

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+which="${1:?usage: tmux-toggle-pane sidebar|panel}"
+SESSION=$(tmux display -p '#{session_name}')
+main=$(tmux show-options -qv -t "$SESSION" @ide_main)
+
+case "$which" in
+  sidebar) pane=$(tmux show-options -qv -t "$SESSION" @ide_left)
+           join=(-f -hb -l 30% -s "$pane" -t "$main") ;;
+  panel)   pane=$(tmux show-options -qv -t "$SESSION" @ide_panel)
+           join=(-v  -l 20% -s "$pane" -t "$main") ;;
+  *) echo "unknown: $which" >&2; exit 1 ;;
+esac
+
+# Pane gone (process exited / pane closed)? Nothing to toggle.
+tmux display -t "$pane" -p '' >/dev/null 2>&1 || { echo "pane $pane missing" >&2; exit 0; }
+
+cur_win=$(tmux display -t "$pane" -p '#{window_name}')
+if [ "$cur_win" = "_ide_hidden" ]; then
+  tmux join-pane "${join[@]}"                  # show: dock it back
+else
+  tmux break-pane -d -s "$pane" -n _ide_hidden # hide: stash live pane
+fi
