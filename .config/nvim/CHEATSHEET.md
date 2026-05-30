@@ -19,6 +19,8 @@ Launch with `ide` (or `ide ~/path/to/project`). The tmux **prefix** is `Ctrl-b` 
 | `C-b r` | reload tmux config |
 | `C-b h/j/k/l` | move between tmux panes |
 | `C-b d` | detach (leaves everything running; `ide` re-attaches) |
+| `C-b Q` | **close** the IDE session entirely (asks y/n) |
+| `ide kill` | close the IDE from a shell (same as `ide close` / `ide stop`) |
 | `C-b |` / `C-b -` | manual vertical / horizontal tmux split |
 
 Editor defaults to `nvim`. Run `IDE_EDITOR=vim ide` to use vim instead.

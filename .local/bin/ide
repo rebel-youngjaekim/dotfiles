@@ -5,6 +5,18 @@ SESSION="ide"
 DIR="${1:-$PWD}"
 EDITOR_CMD="${IDE_EDITOR:-nvim}"  # nvim by default (see ~/.config/nvim); set IDE_EDITOR=vim to override
 
+# `ide kill` (or close/stop) tears down the whole ide session.
+case "${1:-}" in
+  kill|close|stop)
+    if tmux kill-session -t "$SESSION" 2>/dev/null; then
+      echo "ide session closed"
+    else
+      echo "no ide session running"
+    fi
+    exit 0
+    ;;
+esac
+
 # Split a sidebar (claude) and bottom panel around the given editor pane,
 # and record the three pane ids as session options for the toggle helper.
 build_panes() {
