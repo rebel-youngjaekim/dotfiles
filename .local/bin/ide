@@ -3,7 +3,7 @@ set -euo pipefail
 
 SESSION="ide"
 DIR="${1:-$PWD}"
-EDITOR_CMD="${IDE_EDITOR:-vim}"   # vim by default; set IDE_EDITOR=nvim to override
+EDITOR_CMD="${IDE_EDITOR:-nvim}"  # nvim by default (see ~/.config/nvim); set IDE_EDITOR=vim to override
 
 # Split a sidebar (claude) and bottom panel around the given editor pane,
 # and record the three pane ids as session options for the toggle helper.
