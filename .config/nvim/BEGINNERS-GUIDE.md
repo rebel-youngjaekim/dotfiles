@@ -68,7 +68,31 @@ So instead of "two splits each with their own tabs," you have "two groups you fl
 
 ---
 
-## 5. Will this work on a new machine?
+## 5. Code intelligence (jump-to-definition, autocomplete, linting)
+
+This is the big "it's a real IDE now" part. A **language server** (clangd, for C/C++) reads your code and understands it — so you get the things you'd expect from VSCode/Cursor. It attaches automatically when you open a C file.
+
+**Jump to a definition.** Put your cursor on a function/variable and press `g d`. If there's one definition, you land on it. If there are several, a Telescope picker opens with a preview so you can peek first. Want the definition in a *split* so you keep your current file visible? Two ways: inside the picker press `Ctrl-v` (vertical) or `Ctrl-x` (horizontal); or skip the picker entirely with `Space c v` / `Space c h`. Jump *back* where you came from with `Ctrl-o` (same as vim's jumplist).
+
+**See what something is.** Press `K` (capital) on a symbol — a popup shows its type, signature, and docs. Press `K` again (or move) to dismiss.
+
+**Other jumps:** `g D` declaration · `g i` implementation · `g r` all references · `g y` type definition. (Heads-up: these override a couple of rarely-used vim defaults like `gr`; that's normal for an IDE setup.)
+
+**Autocomplete.** Just type — a menu of suggestions appears (from clangd, snippets, open buffers, paths). `Ctrl-n`/`Ctrl-p` move through it, `Enter` accepts the highlighted one, `Tab` also moves down. `Ctrl-Space` forces the menu open if it didn't appear. `Ctrl-e` dismisses it. Nothing is inserted until you pick something, so you can ignore it and keep typing.
+
+**Linting — it's automatic.** clangd runs **clang-tidy** in the background and underlines problems with a colored squiggle plus a sign in the gutter. You don't run anything. Jump between problems with `]d` (next) / `[d` (previous). The short message shows inline; press `Space c d` to read the full message, or `Space c l` to list every problem in the project in a Telescope picker.
+
+**Fix / refactor.** `Space c a` offers code actions (auto-add a missing include, apply a clang-tidy fix, etc.). `Space c r` renames a symbol everywhere it's used. `Space c f` formats the file.
+
+**Pointing clangd at your build.** clangd needs a `compile_commands.json` to know each file's compiler flags. You already merge all of them into one with `~/scripts/merge_compile_commands.sh`. Tell nvim where that merged file lives with an env var in your shell rc:
+```sh
+export CLANGD_CDB_DIR=/home/ldap/yjkim/tmp
+```
+That's the same path as your old Cursor `--compile-commands-dir`. **The rebuild annoyance you mentioned has a real fix:** instead of (or in addition to) the env var, put a `.clangd` file at your project root and add flags there under `CompileFlags.Add:` — those apply to every file *instantly*, with no rebuild and no re-merge. See `CHEATSHEET.md` → "Code intelligence" for the exact snippet. And when you *do* re-run the merge script, clangd notices the new `compile_commands.json` on its own — no need to restart nvim.
+
+---
+
+## 6. Will this work on a new machine?
 
 Yes, automatically. Your whole nvim config lives in `~/.config/nvim/` and is in your dotfiles. On a new machine:
 
@@ -79,8 +103,9 @@ You do **not** install a plugin manager separately — the config does it for yo
 
 ---
 
-## 6. Troubleshooting
+## 7. Troubleshooting
 
+- **No autocomplete / no jump-to-definition / no squiggles.** The language server may not have started. Run `:LspInfo` (or `:checkhealth vim.lsp`) to see if `clangd` is attached. If it's not, check `clangd` is installed (`:!which clangd`). If it attached but can't resolve `#include`s or symbols, it can't find your `compile_commands.json` — set `CLANGD_CDB_DIR` or add a `.clangd` file (see section 5).
 - **Icons look like boxes (□).** Your terminal font isn't a Nerd Font. Install one (e.g. "JetBrainsMono Nerd Font") and select it in your terminal emulator's settings. Everything still *works* without it.
 - **`Space` does nothing / no menu.** Make sure you're in **normal mode** (press `Esc` first). The menu only appears in normal mode.
 - **Copy/paste to other apps doesn't work.** nvim uses the system clipboard via `xclip`/`xsel` (both installed here). On a new machine you may need to install one of them.
@@ -90,7 +115,7 @@ You do **not** install a plugin manager separately — the config does it for yo
 
 ---
 
-## 7. Learn vim/nvim deeper
+## 8. Learn vim/nvim deeper
 
 - Run `:Tutor` inside nvim for the built-in 30-minute interactive tutorial.
 - `:help <topic>` for anything (e.g. `:help windows`, `:help :split`).

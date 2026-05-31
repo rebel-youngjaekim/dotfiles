@@ -87,5 +87,36 @@ Each **tab page** is an "editor group" with its own tab strip (via scope.nvim) �
 
 Inside the diff view: `Tab`/`Shift-Tab` cycle changed files · `Space g c` closes it.
 
+### Code intelligence (clangd / LSP)
+Powered by **clangd** (C/C++). Linting is automatic — clangd runs clang-tidy and underlines problems as you go. These maps are active in any file the language server attached to.
+| Keys | Action |
+|------|--------|
+| `g d` | **jump to definition** (Telescope: preview it, or `Ctrl-v`/`Ctrl-x` to open in a v/h split) |
+| `Space c v` / `Space c h` | jump to definition in a **new vertical / horizontal split** |
+| `g D` | jump to declaration |
+| `g i` | jump to implementation |
+| `g y` | jump to type definition |
+| `g r` | find all **references** |
+| `K` | **hover** — show docs / signature for the symbol under the cursor |
+| `Space c a` | code **action** (quick-fixes, includes) |
+| `Space c r` | **rename** the symbol everywhere |
+| `Space c f` | format the buffer |
+| `Space c s` | list symbols in this file |
+| `]d` / `[d` | next / previous **diagnostic** (lint problem) |
+| `Space c d` | show the full diagnostic message under the cursor |
+| `Space c l` | list **all** diagnostics in the project |
+
+**Autocomplete** (nvim-cmp) pops up as you type. `Ctrl-Space` forces it open · `Ctrl-n`/`Ctrl-p` move · `Enter` accepts the highlighted item · `Tab`/`Shift-Tab` move through the menu and snippet fields · `Ctrl-e` dismisses · `Ctrl-d`/`Ctrl-u` scroll the doc popup.
+
+**Telling clangd where your `compile_commands.json` is** — two ways:
+- Quick: `export CLANGD_CDB_DIR=/home/ldap/yjkim/tmp` in your shell rc (the merged dir from `~/scripts/merge_compile_commands.sh`). nvim passes it as `--compile-commands-dir`.
+- Better (no rebuilds when you add a flag): drop a **`.clangd`** file at the project root:
+  ```yaml
+  CompileFlags:
+    CompilationDatabase: /home/ldap/yjkim/tmp   # dir holding compile_commands.json
+    Add: [-std=c17, -D SOME_MACRO]              # flags applied to every file, live
+  ```
+  Editing `.clangd` takes effect immediately — clangd re-reads it with no rebuild. clangd also auto-reloads `compile_commands.json` whenever the merge script rewrites it, so you just re-run the script; no need to restart nvim.
+
 ### General (same as vim)
 `:w` save · `:q` quit window · `:qa` quit nvim · `:wqa` save all & quit · `Esc` clears search highlight.
