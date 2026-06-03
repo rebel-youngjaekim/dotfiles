@@ -23,6 +23,7 @@ Launch with `ide` (or `ide ~/path/to/project`). The tmux **prefix** is `Ctrl-b` 
 | `ide close` | close just **this** IDE window (others keep running; ends the session if it's the last window). `ide stop` is the same |
 | `ide kill` | tear down the **whole** IDE session (every window) |
 | `C-b |` / `C-b -` | manual vertical / horizontal tmux split |
+| `C-b C-q` | cut the current pane into **quarters** (2×2 grid: TL, TR, BL, BR); cursor lands top-left |
 
 Editor defaults to `nvim`. Run `IDE_EDITOR=vim ide` to use vim instead.
 
