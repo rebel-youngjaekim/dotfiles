@@ -5,9 +5,27 @@ SESSION="ide"
 DIR="${1:-$PWD}"
 EDITOR_CMD="${IDE_EDITOR:-nvim}"  # nvim by default (see ~/.config/nvim); set IDE_EDITOR=vim to override
 
-# `ide kill` (or close/stop) tears down the whole ide session.
+# nvim listens here so lazygit's edit (the C-b g popup) can --remote files into
+# this pane via ~/.local/bin/ide-open instead of opening a nested editor.
+SOCKET="${XDG_RUNTIME_DIR:-/tmp}/nvim-${SESSION}.sock"
+case "$EDITOR_CMD" in
+  *nvim*) EDITOR_CMD="$EDITOR_CMD --listen $SOCKET" ;;
+esac
+
+# `ide close` (or stop) closes just THIS ide window; tmux auto-ends the
+# session when it's the last one. `ide kill` tears down the whole session.
 case "${1:-}" in
-  kill|close|stop)
+  close|stop)
+    if [ -n "${TMUX:-}" ]; then
+      # Killing the current window also kills this pane (where the script
+      # runs), so nothing after kill-window executes — that's fine.
+      tmux kill-window -t "$(tmux display -p '#{window_id}')"
+      exit 0
+    fi
+    echo "not inside the ide session; use 'ide kill' to tear it down" >&2
+    exit 1
+    ;;
+  kill)
     if tmux kill-session -t "$SESSION" 2>/dev/null; then
       echo "ide session closed"
     else
@@ -21,12 +39,14 @@ esac
 # and record the three pane ids as session options for the toggle helper.
 build_panes() {
   local sess="$1" main="$2" left panel
+  rm -f "$SOCKET"   # clear a stale socket so nvim --listen can bind
   left=$(tmux split-window -PF '#{pane_id}' -f -hb -l 30% -t "$main" -c "$DIR")
   tmux send-keys -t "$left" "claude" C-m
   panel=$(tmux split-window -PF '#{pane_id}' -v -l 20% -t "$main" -c "$DIR")
   tmux set-option -t "$sess" @ide_main  "$main"
   tmux set-option -t "$sess" @ide_left  "$left"
   tmux set-option -t "$sess" @ide_panel "$panel"
+  tmux set-option -t "$sess" @ide_nvim_socket "$SOCKET"
   tmux select-pane -t "$main"
 }
 

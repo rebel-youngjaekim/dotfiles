@@ -20,7 +20,8 @@ Launch with `ide` (or `ide ~/path/to/project`). The tmux **prefix** is `Ctrl-b` 
 | `C-b h/j/k/l` | move between tmux panes |
 | `C-b d` | detach (leaves everything running; `ide` re-attaches) |
 | `C-b Q` | **close** the IDE session entirely (asks y/n) |
-| `ide kill` | close the IDE from a shell (same as `ide close` / `ide stop`) |
+| `ide close` | close just **this** IDE window (others keep running; ends the session if it's the last window). `ide stop` is the same |
+| `ide kill` | tear down the **whole** IDE session (every window) |
 | `C-b |` / `C-b -` | manual vertical / horizontal tmux split |
 
 Editor defaults to `nvim`. Run `IDE_EDITOR=vim ide` to use vim instead.
@@ -108,15 +109,20 @@ Powered by **clangd** (C/C++). Linting is automatic — clangd runs clang-tidy a
 
 **Autocomplete** (nvim-cmp) pops up as you type. `Ctrl-Space` forces it open · `Ctrl-n`/`Ctrl-p` move · `Enter` accepts the highlighted item · `Tab`/`Shift-Tab` move through the menu and snippet fields · `Ctrl-e` dismisses · `Ctrl-d`/`Ctrl-u` scroll the doc popup.
 
-**Telling clangd where your `compile_commands.json` is** — two ways:
-- Quick: `export CLANGD_CDB_DIR=/home/ldap/yjkim/tmp` in your shell rc (the merged dir from `~/scripts/merge_compile_commands.sh`). nvim passes it as `--compile-commands-dir`.
-- Better (no rebuilds when you add a flag): drop a **`.clangd`** file at the project root:
-  ```yaml
-  CompileFlags:
-    CompilationDatabase: /home/ldap/yjkim/tmp   # dir holding compile_commands.json
-    Add: [-std=c17, -D SOME_MACRO]              # flags applied to every file, live
-  ```
-  Editing `.clangd` takes effect immediately — clangd re-reads it with no rebuild. clangd also auto-reloads `compile_commands.json` whenever the merge script rewrites it, so you just re-run the script; no need to restart nvim.
+**Telling clangd where your `compile_commands.json` is.** Each repo carries a
+merged `compile_commands.json` **at its root**; clangd finds it by searching a
+file's parent directories — no env var, no global flag, and it works across
+every repo at once. Generate/refresh the merged DB with that repo's
+`scripts/gen_compile_commands.sh` (it collects the per-subproject databases the
+build emits and merges them to the root). clangd auto-reloads the file whenever
+you re-run the script — no need to restart nvim.
+
+Per-project flag tweaks (no rebuild) go in a **`.clangd`** file at the repo root:
+```yaml
+CompileFlags:
+  Add: [-std=c17, -D SOME_MACRO]   # applied to every file, live
+```
+Editing `.clangd` takes effect immediately — clangd re-reads it with no rebuild.
 
 ### General (same as vim)
 `:w` save · `:q` quit window · `:qa` quit nvim · `:wqa` save all & quit · `Esc` clears search highlight.
