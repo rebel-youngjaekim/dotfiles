@@ -8,22 +8,22 @@ Quick reference. For a walkthrough if you're new to nvim, see `BEGINNERS-GUIDE.m
 
 ## Layer 1 — the IDE frame (tmux)
 
-Launch with `ide` (or `ide ~/path/to/project`). The tmux **prefix** is `Ctrl-b` — press it, release, then the key.
+Launch with `ide` (or `ide ~/path/to/project`). The tmux **prefix** is `Ctrl-s` — press it, release, then the key. (If output ever freezes, `Ctrl-s` is the terminal's legacy XOFF key — press `Ctrl-q` to unfreeze.)
 
 | Keys | Action |
 |------|--------|
 | `ide` | open the IDE (or re-attach if already running) |
-| `C-b b` | toggle the **left Claude sidebar** (keeps its session + history) |
-| `C-b t` | toggle the **bottom terminal** |
-| `C-b g` | **lazygit** popup (git operations) over the current repo |
-| `C-b r` | reload tmux config |
-| `C-b h/j/k/l` | move between tmux panes |
-| `C-b d` | detach (leaves everything running; `ide` re-attaches) |
-| `C-b Q` | **close** the IDE session entirely (asks y/n) |
+| `C-s b` | toggle the **left Claude sidebar** (keeps its session + history) |
+| `C-s t` | toggle the **bottom terminal** |
+| `C-s g` | **lazygit** popup (git operations) over the current repo |
+| `C-s r` | reload tmux config |
+| `C-s h/j/k/l` | move between tmux panes |
+| `C-s d` | detach (leaves everything running; `ide` re-attaches) |
+| `C-s Q` | **close** the IDE session entirely (asks y/n) |
 | `ide close` | close just **this** IDE window (others keep running; ends the session if it's the last window). `ide stop` is the same |
 | `ide kill` | tear down the **whole** IDE session (every window) |
-| `C-b |` / `C-b -` | manual vertical / horizontal tmux split |
-| `C-b C-q` | cut the current pane into **quarters** (2×2 grid: TL, TR, BL, BR); cursor lands top-left |
+| `C-s |` / `C-s -` | manual vertical / horizontal tmux split |
+| `C-s C-q` | cut the current pane into **quarters** (2×2 grid: TL, TR, BL, BR); cursor lands top-left |
 
 Editor defaults to `nvim`. Run `IDE_EDITOR=vim ide` to use vim instead.
 
@@ -85,7 +85,7 @@ Each **tab page** is an "editor group" with its own tab strip (via scope.nvim) �
 | `Space g p` | preview the change under the cursor |
 | `Space g b` | git blame for the current line |
 | `Space g s` / `Space g r` | stage / reset the change under the cursor |
-| `C-b g` (tmux) | full lazygit TUI for everything else |
+| `C-s g` (tmux) | full lazygit TUI for everything else |
 
 Inside the diff view: `Tab`/`Shift-Tab` cycle changed files · `Space g c` closes it.
 

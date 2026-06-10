@@ -32,8 +32,8 @@ Everything else — your editing muscle memory — is unchanged.
 ## 3. A normal session, start to finish
 
 **Open the IDE.** In a terminal: `ide`. You get three areas (this is *tmux*, the outer frame, not nvim):
-- left = a terminal running Claude Code (toggle with `Ctrl-b` then `b`)
-- bottom = a terminal (toggle with `Ctrl-b` then `t`)
+- left = a terminal running Claude Code (toggle with `Ctrl-s` then `b`)
+- bottom = a terminal (toggle with `Ctrl-s` then `t`)
 - center = **nvim** — this is where you live
 
 **Open a file.** Press `Space f f`. A search box appears with a preview on the right. Type part of a filename; the list narrows as you type. Move with `Ctrl-n`/`Ctrl-p` (or arrow keys), watch the preview update, press `Enter` to open it. (`Esc` `Esc` backs out without opening.)
@@ -48,9 +48,9 @@ Everything else — your editing muscle memory — is unchanged.
 
 **Check git / compare to dev.** `Space g d` opens a side-by-side diff of your branch against the team's base branch (it auto-finds `dev`, then `develop`, `main`, or `master`). A list of changed files appears; `Tab`/`Shift-Tab` cycle through them, the diff shows on the right. `Space g c` closes it. While editing, changed lines are marked in the gutter — `]c`/`[c` jump between them, `Space g p` previews one.
 
-**Do git operations.** For staging, committing, switching branches, etc., press `Ctrl-b` then `g` — a **lazygit** window pops up over your screen. It's a friendly full git UI; press `?` inside it for help, `q` to close.
+**Do git operations.** For staging, committing, switching branches, etc., press `Ctrl-s` then `g` — a **lazygit** window pops up over your screen. It's a friendly full git UI; press `?` inside it for help, `q` to close.
 
-**Save & quit.** Exactly like vim: `:w` saves, `:q` closes a split, `:wqa` saves everything and quits nvim, then `Ctrl-b d` detaches the IDE (or just close the terminal).
+**Save & quit.** Exactly like vim: `:w` saves, `:q` closes a split, `:wqa` saves everything and quits nvim, then `Ctrl-s d` detaches the IDE (or just close the terminal).
 
 ---
 
@@ -84,11 +84,7 @@ This is the big "it's a real IDE now" part. A **language server** (clangd, for C
 
 **Fix / refactor.** `Space c a` offers code actions (auto-add a missing include, apply a clang-tidy fix, etc.). `Space c r` renames a symbol everywhere it's used. `Space c f` formats the file.
 
-**Pointing clangd at your build.** clangd needs a `compile_commands.json` to know each file's compiler flags. You already merge all of them into one with `~/scripts/merge_compile_commands.sh`. Tell nvim where that merged file lives with an env var in your shell rc:
-```sh
-export CLANGD_CDB_DIR=/home/ldap/yjkim/tmp
-```
-That's the same path as your old Cursor `--compile-commands-dir`. **The rebuild annoyance you mentioned has a real fix:** instead of (or in addition to) the env var, put a `.clangd` file at your project root and add flags there under `CompileFlags.Add:` — those apply to every file *instantly*, with no rebuild and no re-merge. See `CHEATSHEET.md` → "Code intelligence" for the exact snippet. And when you *do* re-run the merge script, clangd notices the new `compile_commands.json` on its own — no need to restart nvim.
+**Pointing clangd at your build.** clangd needs a `compile_commands.json` to know each file's compiler flags. Each repo keeps a merged one **at its root**, and clangd finds it automatically by searching the open file's parent directories — nothing to configure in nvim, and it works no matter which repo you're in. Generate/refresh that merged file by running the repo's `scripts/gen_compile_commands.sh` (it gathers the per-subproject databases the build emits and merges them to the root). When you re-run it, clangd notices the new `compile_commands.json` on its own — no need to restart nvim. **The rebuild annoyance you mentioned has a real fix:** put a `.clangd` file at the repo root and add flags under `CompileFlags.Add:` — those apply to every file *instantly*, with no rebuild and no re-merge. See `CHEATSHEET.md` → "Code intelligence" for the snippet.
 
 ---
 
@@ -99,13 +95,13 @@ Yes, automatically. Your whole nvim config lives in `~/.config/nvim/` and is in 
 1. `dotfiles pull` (brings the config down)
 2. run `nvim` once — it **bootstraps itself**: it auto-clones the plugin manager (lazy.nvim) and then installs every plugin, builds the fuzzy-finder, and downloads syntax parsers. Wait ~30 seconds, quit, reopen, done.
 
-You do **not** install a plugin manager separately — the config does it for you. The only non-config things the new machine needs are: `git`, a C compiler (`gcc`/`cc`), `ripgrep` (`rg`), and `lazygit`. If `lazygit` is missing there, the `Ctrl-b g` popup won't open — reinstall it (it's a single binary; download from its GitHub releases into `~/.local/bin/`). `lazy-lock.json` in the config pins exact plugin versions so a new machine matches this one.
+You do **not** install a plugin manager separately — the config does it for you. The only non-config things the new machine needs are: `git`, a C compiler (`gcc`/`cc`), `ripgrep` (`rg`), and `lazygit`. If `lazygit` is missing there, the `Ctrl-s g` popup won't open — reinstall it (it's a single binary; download from its GitHub releases into `~/.local/bin/`). `lazy-lock.json` in the config pins exact plugin versions so a new machine matches this one.
 
 ---
 
 ## 7. Troubleshooting
 
-- **No autocomplete / no jump-to-definition / no squiggles.** The language server may not have started. Run `:LspInfo` (or `:checkhealth vim.lsp`) to see if `clangd` is attached. If it's not, check `clangd` is installed (`:!which clangd`). If it attached but can't resolve `#include`s or symbols, it can't find your `compile_commands.json` — set `CLANGD_CDB_DIR` or add a `.clangd` file (see section 5).
+- **No autocomplete / no jump-to-definition / no squiggles.** The language server may not have started. Run `:LspInfo` (or `:checkhealth vim.lsp`) to see if `clangd` is attached. If it's not, check `clangd` is installed (`:!which clangd`). If it attached but can't resolve `#include`s or symbols, it can't find your `compile_commands.json` — run the repo's `scripts/gen_compile_commands.sh` to put a merged one at the repo root (see section 5).
 - **Icons look like boxes (□).** Your terminal font isn't a Nerd Font. Install one (e.g. "JetBrainsMono Nerd Font") and select it in your terminal emulator's settings. Everything still *works* without it.
 - **`Space` does nothing / no menu.** Make sure you're in **normal mode** (press `Esc` first). The menu only appears in normal mode.
 - **Copy/paste to other apps doesn't work.** nvim uses the system clipboard via `xclip`/`xsel` (both installed here). On a new machine you may need to install one of them.
