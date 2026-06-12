@@ -5,12 +5,30 @@ SESSION="ide"
 DIR="${1:-$PWD}"
 EDITOR_CMD="${IDE_EDITOR:-nvim}"  # nvim by default (see ~/.config/nvim); set IDE_EDITOR=vim to override
 
+# Repos opened by `ide bundle`, one tmux window each ("name:dir", in order).
+# Override the bundle root with IDE_BUNDLE=... ide bundle
+BUNDLE="${IDE_BUNDLE:-$HOME/src/ssw-bundle}"
+IDE_WINDOWS=(
+  "sys:$BUNDLE/products/rebel/q/sys"
+  "umd:$BUNDLE/products/common/umd"
+  "tools:$BUNDLE/products/common/tools"
+  "kmd:$BUNDLE/products/common/kmd"
+  "bundle:$BUNDLE"
+)
+
 # nvim listens here so lazygit's edit (the C-b g popup) can --remote files into
-# this pane via ~/.local/bin/ide-open instead of opening a nested editor.
-SOCKET="${XDG_RUNTIME_DIR:-/tmp}/nvim-${SESSION}.sock"
-case "$EDITOR_CMD" in
-  *nvim*) EDITOR_CMD="$EDITOR_CMD --listen $SOCKET" ;;
-esac
+# this pane via ~/.local/bin/ide-open instead of opening a nested editor. The
+# socket is per-WINDOW (derived from the window id) so multiple ide windows
+# don't fight over one socket and lazygit's edit reaches the right editor.
+win_socket() { echo "${XDG_RUNTIME_DIR:-/tmp}/nvim-${SESSION}-${1//@/}.sock"; }
+
+# nvim wants `--listen <sock>`; other editors (IDE_EDITOR=vim) take no socket.
+editor_cmd() {  # $1 = socket path
+  case "$EDITOR_CMD" in
+    *nvim*) echo "$EDITOR_CMD --listen $1" ;;
+    *)      echo "$EDITOR_CMD" ;;
+  esac
+}
 
 # `ide close` (or stop) closes just THIS ide window; tmux auto-ends the
 # session when it's the last one. `ide kill` tears down the whole session.
@@ -36,19 +54,61 @@ case "${1:-}" in
 esac
 
 # Split a sidebar (claude) and bottom panel around the given editor pane,
-# and record the three pane ids as session options for the toggle helper.
+# and record the three pane ids as WINDOW options for the toggle helper.
 build_panes() {
-  local sess="$1" main="$2" left panel
-  rm -f "$SOCKET"   # clear a stale socket so nvim --listen can bind
+  local sess="$1" main="$2" win left panel sock
+  win=$(tmux display -t "$main" -p '#{window_id}')
+  sock=$(win_socket "$win")
+  rm -f "$sock"   # clear a stale socket so nvim --listen can bind
   left=$(tmux split-window -PF '#{pane_id}' -f -hb -l 30% -t "$main" -c "$DIR")
-  tmux send-keys -t "$left" "claude" C-m
+  # Tabbed Claude: a nested tmux (own server) so the sidebar can hold several
+  # Claude instances as tabs. Session name = this window id (sanitized), so each
+  # ide window's sidebar has its own independent set of tabs. See ~/.local/bin/claude-tabs.
+  tmux send-keys -t "$left" "claude-tabs ${win//@/}" C-m
   panel=$(tmux split-window -PF '#{pane_id}' -v -l 20% -t "$main" -c "$DIR")
-  tmux set-option -t "$sess" @ide_main  "$main"
-  tmux set-option -t "$sess" @ide_left  "$left"
-  tmux set-option -t "$sess" @ide_panel "$panel"
-  tmux set-option -t "$sess" @ide_nvim_socket "$SOCKET"
+  # Window-scoped so each ide window toggles its OWN panes (see tmux-toggle-pane).
+  tmux set-option -w -t "$win" @ide_main  "$main"
+  tmux set-option -w -t "$win" @ide_left  "$left"
+  tmux set-option -w -t "$win" @ide_panel "$panel"
+  tmux set-option -w -t "$win" @ide_nvim_socket "$sock"
   tmux select-pane -t "$main"
 }
+
+# Open one tmux window named $1, rooted in dir $2, built into the ide layout.
+make_window() {
+  local name="$1" dir="$2" win main
+  win=$(tmux new-window -PF '#{window_id}' -t "$SESSION" -n "$name" -c "$dir")
+  main=$(tmux display -t "$win" -p '#{pane_id}')
+  DIR="$dir"   # build_panes opens the sidebar/panel with `-c "$DIR"`
+  build_panes "$SESSION" "$main"
+  tmux send-keys -t "$main" "$(editor_cmd "$(win_socket "$win")")" C-m
+}
+
+# `ide bundle` -> open one ide window per repo in IDE_WINDOWS (idempotent:
+# windows already open by name are left alone). Creates the session if needed.
+if [ "${1:-}" = "bundle" ]; then
+  first_name="${IDE_WINDOWS[0]%%:*}"
+  first_dir="${IDE_WINDOWS[0]#*:}"
+  if ! tmux has-session -t "$SESSION" 2>/dev/null; then
+    # Create the session with the first repo as window 1, built in place.
+    tmux new-session -d -s "$SESSION" -c "$first_dir" -n "$first_name" \
+         -x "$(tput cols)" -y "$(tput lines)"
+    main=$(tmux display -t "$SESSION" -p '#{pane_id}')
+    DIR="$first_dir"
+    build_panes "$SESSION" "$main"
+    win=$(tmux display -t "$main" -p '#{window_id}')
+    tmux send-keys -t "$main" "$(editor_cmd "$(win_socket "$win")")" C-m
+  fi
+  existing=$(tmux list-windows -t "$SESSION" -F '#{window_name}')
+  for entry in "${IDE_WINDOWS[@]}"; do
+    name="${entry%%:*}"; dir="${entry#*:}"
+    grep -qxF "$name" <<<"$existing" && continue   # already open
+    make_window "$name" "$dir"
+  done
+  tmux select-window -t "$SESSION:$first_name" 2>/dev/null || true
+  [ -z "${TMUX:-}" ] && exec tmux attach -t "$SESSION"
+  exit 0
+fi
 
 if [ -n "${TMUX:-}" ]; then
   # Inside tmux: rebuild the CURRENT window into the ide layout.
@@ -57,7 +117,8 @@ if [ -n "${TMUX:-}" ]; then
   tmux kill-pane -a -t "$cur" 2>/dev/null || true   # remove every other pane in this window
   build_panes "$sess" "$cur"
   cd "$DIR"
-  exec $EDITOR_CMD                                   # this pane becomes the editor
+  win=$(tmux display -t "$cur" -p '#{window_id}')
+  exec $(editor_cmd "$(win_socket "$win")")          # this pane becomes the editor
 fi
 
 # Outside tmux: create the ide session (or attach if it already exists).
@@ -68,6 +129,7 @@ fi
 tmux new-session -d -s "$SESSION" -c "$DIR" -x "$(tput cols)" -y "$(tput lines)"
 main=$(tmux display -t "$SESSION" -p '#{pane_id}')
 build_panes "$SESSION" "$main"
-tmux send-keys -t "$main" "$EDITOR_CMD" C-m
+win=$(tmux display -t "$main" -p '#{window_id}')
+tmux send-keys -t "$main" "$(editor_cmd "$(win_socket "$win")")" C-m
 tmux select-pane -t "$main"
 exec tmux attach -t "$SESSION"

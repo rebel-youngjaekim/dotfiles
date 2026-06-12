@@ -29,6 +29,11 @@ return {
     end
 
     -- ── clangd command (your Cursor clangd.arguments, ported) ──
+    -- No --compile-commands-dir on purpose: that flag is GLOBAL (one dir for
+    -- every project), so it can't serve multiple repos. Instead each repo
+    -- carries a merged compile_commands.json at its root, and clangd's default
+    -- per-file parent-directory search picks the right one automatically.
+    -- Generate the merged DB with the repo's scripts/gen_compile_commands.sh.
     local cmd = {
       "clangd",
       "--background-index",
@@ -37,15 +42,6 @@ return {
       "--completion-style=detailed",
       "--function-arg-placeholders",
     }
-    -- The merged compile_commands.json dir is machine-specific (see
-    -- ~/scripts/merge_compile_commands.sh), so it lives in an env var instead
-    -- of being hardcoded into synced dotfiles. In your shell rc:
-    --   export CLANGD_CDB_DIR=/home/ldap/yjkim/tmp
-    -- (Better still: a per-project .clangd file — see CHEATSHEET.md.)
-    local cdb = vim.env.CLANGD_CDB_DIR
-    if cdb and cdb ~= "" then
-      table.insert(cmd, "--compile-commands-dir=" .. cdb)
-    end
 
     vim.lsp.config("clangd", { cmd = cmd, capabilities = caps })
     vim.lsp.enable("clangd")
@@ -85,6 +81,13 @@ return {
           vim.lsp.buf.format({ async = true })
         end, "Format buffer")
         m("<leader>cs", tb.lsp_document_symbols, "Document symbols")
+
+        -- inlay hints (clangd shows parameter names + deduced types inline).
+        -- Off by default; toggle per-buffer on demand so they don't clutter.
+        m("<leader>ci", function()
+          local on = vim.lsp.inlay_hint.is_enabled({ bufnr = ev.buf })
+          vim.lsp.inlay_hint.enable(not on, { bufnr = ev.buf })
+        end, "Toggle inlay hints")
 
         -- diagnostics ("linting" results)
         m("<leader>cd", vim.diagnostic.open_float, "Line diagnostics (full message)")

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Tabbed Claude sessions for the ide sidebar pane.
+#
+# Runs a NESTED tmux on its own server (-L ide-claude) so it never talks to the
+# outer ide server. Each outer ide window gets its own nested session (name
+# passed as $1), and every tab (window) inside it is an independent Claude.
+#
+#   C-a c       new Claude tab          C-a n / C-a p   next / prev tab
+#   C-a C       new plain shell tab     C-a 1..9        jump to tab N
+#   C-a C-a     last tab                C-a ,           rename tab
+#   C-a &       close tab               (mouse: click a tab to switch)
+#
+# The nested server outlives `ide kill`. To wipe all Claude tabs everywhere:
+#   tmux -L ide-claude kill-server
+
+name="${1:-claude}"
+exec tmux -L ide-claude -f "$HOME/.config/tmux/claude.conf" \
+  new-session -A -s "$name" claude
